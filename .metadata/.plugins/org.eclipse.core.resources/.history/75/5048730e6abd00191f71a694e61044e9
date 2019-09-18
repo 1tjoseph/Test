@@ -1,0 +1,234 @@
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+
+
+
+public class Lotto implements Cloneable{
+	
+	public static void main(String[] args) {
+		int totalCnt;
+		int totalRankCnt = 0;
+		List<String> answer;
+		Map<Integer, Integer> rankCntMap = new HashMap<>();
+		
+		
+		if(args.length < 3){
+			System.out.println("매개변수가 부족합니다.");
+			return;
+		}
+		
+		
+		//1등 숫자 체크 validation
+		if(args[0].split(",").length != 6){
+			System.out.println("1등의 숫자가 6개가 아닙니다.");
+			return;
+		}
+		
+		for(String chkVal : args[0].split(",")){
+			if(!numChk(chkVal)){
+				return;
+			}
+		}
+		
+		answer = new ArrayList<String>(Arrays.asList(args[0].split(",")));
+		
+		if(!duplicateIndexValChk(answer)){
+			System.out.println("1등의 숫자가 중복되는 값이 있습니다.");
+			return;
+		}
+
+		//각등수마다 생성할 숫자의 수 validation
+		for(String temp : args[1].split(",")){
+			String[] keyVal = temp.split(":");
+			
+			if(!numChk(keyVal[1])){
+				return;
+			}
+			
+			//추후 등수별 갯수체크는 여기 추가
+			
+			rankCntMap.put(Integer.parseInt(keyVal[0]), Integer.parseInt(keyVal[1]));
+			totalRankCnt += Integer.parseInt(keyVal[1]);
+			
+		}
+		if(rankCntMap.size() != args[1].split(",").length){
+			System.out.println("중복된 순위가 있습니다.");
+			return;
+		}
+		
+		//전체 생성될 개수 validation
+		if(!numChk(args[2])){
+			return;
+		}
+		
+		totalCnt = Integer.parseInt(args[2]);
+		if(totalCnt < totalRankCnt){
+			System.out.println("전체 생성될 개수가 각등수마다 생성될 숫자의 합보다 작을 수 없습니다.");
+			return;
+		}
+		
+		rankCntMap.put(0, totalCnt - totalRankCnt);
+		System.out.println(totalCnt/totalRankCnt);
+		lottoMaker(answer,rankCntMap);
+
+	}
+	
+	static void lottoMaker(List<String> answer, Map<Integer,Integer> rankCntMap){
+		
+		Set<Integer> key = rankCntMap.keySet();
+		List<ArrayList<String>> result = new ArrayList<ArrayList<String>>(); 
+		
+		for(int mapkey : key){
+			System.out.println("123");
+		}
+		
+		for (Iterator iterator = key.iterator(); iterator.hasNext();) {
+			String rankNum = (String) iterator.next();
+			int rankCnt = (Integer)rankCntMap.get(rankNum);
+			for(int i = 0 ; i < rankCnt ; i++){
+				List chkList = makeNumber(answer,rankNum);
+				if(!duplicateListChk(result,chkList)){
+					i--;
+				}else{
+					result.add((ArrayList<String>) chkList);
+				}
+			}
+		}
+		System.out.println("끝");
+	}
+	
+	/**
+	 * 
+	 * @param answer 1등숫자
+	 * @param rank	랭킹(1,2,3,4,5)
+	 * @return
+	 */
+	static List<String> makeNumber(List<String> answer, String rank){
+		
+		List<String> returnList = new ArrayList<String>(answer);	//리턴될 리스트
+		Collections.copy(returnList,answer);		//깊은복사를 위해 사용
+		List indexList = new ArrayList<Integer>();	//제외할 인덱스 리스트
+		List addList = new ArrayList<String>();		//제외한 후 추가할 번호리스트
+		
+		Random ran = new Random();
+		int rankCnt;
+		
+		if(rank.equals("NON")){
+			rankCnt = 7;	//정답숫자-1 만큼 없어져야함으로
+		}else{
+			rankCnt = Integer.parseInt(rank);
+		}
+		
+		for(int i = 0 ; i < rankCnt-1 ; i++){
+			int index = ran.nextInt(answer.size());	//정답의 index만큼
+			if(indexList.contains(index)){ //같은 index는 제외
+				i--;
+			}else{
+				indexList.add(index);
+			}
+		}
+		Collections.sort(indexList, Comparator.reverseOrder());	
+		
+		for(int i = 0 ; i < rankCnt-1 ; i++){
+			String addStr = String.valueOf(ran.nextInt(45)+1);
+			if(returnList.contains(addStr)){
+				i--;
+			}else{
+				if(addList.contains(addStr)){
+					i--;
+				}else{
+					addList.add(addStr);
+				}
+			}
+		}
+		
+		for(int i = 0 ; i < indexList.size() ; i++){
+			returnList.remove((int)(indexList.get(i)));
+		}
+		
+		returnList.addAll(addList);
+		Collections.sort(returnList);
+		if(!rank.equals("NON")){
+			returnList.add(rank+"등");
+		}
+		return returnList;
+	}
+	
+	/**
+	 * 
+	 * @param str 비어있는지 확인할 값
+	 * @return boolean
+	 */   
+	static boolean emptyChk(String str){
+		if(str == null || str.isEmpty()){
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * 
+	 * @param str 변환할 숫자
+	 * @return 문자를 숫자로 변환해서 보낸다
+	 */
+	static boolean numChk(String str){
+		try{
+			Integer.parseInt(str);
+		}catch(NumberFormatException e){
+			
+			return false;
+			//throw e;
+		}
+		return true;
+	}
+	
+	/**
+	 * 
+	 * @param argsAnswer 사이즈를 체크할 list
+	 * @param size 기준 사이즈
+	 * @return boolean
+	 */
+	static boolean arrayLengthChk(String[] argsAnswer, int size){
+		if(argsAnswer.length != size){
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * 중복 제거 이후 size가 같으면 중복이 없는것으로 판단
+	 * @param list 중복된 값이 있는지를 찾는 list
+	 * @return boolean
+	 */
+	static boolean duplicateIndexValChk(List<String> list){
+		HashSet<String> chkList = new HashSet<String>(list); 
+		if(chkList.size() != list.size()){
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * 리스트 요소가 전부 같은게 있는지 확인
+	 * @param list
+	 * @param compareList
+	 * @return boolean
+	 */
+	static boolean duplicateListChk(List<ArrayList<String>> list, List compareList){
+		for(List a : list){
+			if(a.containsAll(compareList)){
+				return false;
+			}
+		}
+		return true;
+	}
+}
